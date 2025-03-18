@@ -1,0 +1,82 @@
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+
+void Shifruvanna(char S[64], unsigned short Rez[64]) {
+    unsigned char c;
+    unsigned short r, i, b, t;
+    short j;
+
+    for (i = 0; i < 64; i++) {
+        r = 0;
+        c = S[i];
+        t = 1;
+
+        // Номер рядка (3 біти)
+        r |= (i / 8) & 0x07;
+
+        // Позиція символу в рядку (3 біти)
+        r |= ((i % 8) & 0x07) << 3;
+
+        // Біт парності для перших двох полів (6 біт)
+        b = 0;
+        for (j = 0; j < 6; j++) {
+            if (r & (1 << j)) b = !b;
+        }
+        r |= b << 6;
+
+        // ASCII-код символу (8 біт)
+        r |= (c & 0xFF) << 7;
+
+        // Біт парності для ASCII-коду (8 біт)
+        b = 0;
+        for (j = 7; j < 15; j++) {
+            if (r & (1 << j)) b = !b;
+        }
+        r |= b << 15;
+
+        Rez[i] = r;
+    }
+}
+
+int main() {
+    char S[64] = { 0 };
+    unsigned short Rez[64];
+
+    ifstream inputFile("test.txt");
+    if (!inputFile.is_open()) {
+        cerr << "Помилка відкриття файлу!" << endl;
+        return 1;
+    }
+    inputFile.read(S, 64);
+    inputFile.close();
+
+    // Заповнення пробілами, якщо потрібно
+    for (int i = 0; i < 64; i++) {
+        if (S[i] == '\0') {
+            S[i] = ' ';
+        }
+    }
+
+    Shifruvanna(S, Rez);
+
+    // Вивід у консоль у шістнадцятковому форматі
+    cout << "Зашифрований результат у шістнадцятковому форматі:" << endl;
+    for (int i = 0; i < 64; i++) {
+        cout << hex << Rez[i] << endl;
+    }
+
+    // Запис у бінарний файл
+    ofstream outputFile("encrypted.bin", ios::binary);
+    if (!outputFile.is_open()) {
+        cerr << "Помилка відкриття файлу для запису!" << endl;
+        return 1;
+    }
+    outputFile.write(reinterpret_cast<char*>(Rez), sizeof(Rez));
+    outputFile.close();
+
+    cout << "Результат записано у файл 'encrypted.bin'." << endl;
+
+    return 0;
+}
